@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Activity, ShieldAlert, Truck, Hospital, User, PhoneCall } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Pluse — Emergency Ambulance Dispatch Platform',
+  title: 'Pulse — Emergency Ambulance Dispatch Platform',
   description: 'One tap. Fastest help. Connecting Patients, Ambulance Drivers, and Emergency Hospitals.',
 };
 
@@ -26,7 +26,7 @@ export default function RootLayout({
               </div>
               <div>
                 <span className="font-extrabold text-xl tracking-tight text-slate-900 group-hover:text-blue-600 transition-colors">
-              PLUSE
+              Pulse
                 </span>
                 <span className="text-[10px] font-mono block text-red-600 font-bold uppercase tracking-wider">
                   Emergency Dispatch System

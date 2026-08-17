@@ -61,7 +61,7 @@ export default function LandingPage() {
         </div>
 
         <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-slate-900">
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-amber-600 to-blue-600">PLUSE+</span>
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-amber-600 to-blue-600">Pulse</span>
         </h1>
 
         <p className="text-xl sm:text-2xl font-extrabold text-blue-700">
