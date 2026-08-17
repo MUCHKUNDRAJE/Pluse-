@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Activity, ShieldAlert, Truck, Hospital, User, PhoneCall } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Call & Report — Emergency Ambulance Dispatch Platform',
+  title: 'Pluse — Emergency Ambulance Dispatch Platform',
   description: 'One tap. Fastest help. Connecting Patients, Ambulance Drivers, and Emergency Hospitals.',
 };
 

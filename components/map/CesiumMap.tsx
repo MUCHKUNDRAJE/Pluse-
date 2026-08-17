@@ -14,6 +14,7 @@ interface CesiumMapProps {
   height?: string;
   className?: string;
   interactive?: boolean;
+  fullscreen?: boolean;
 }
 
 export const CesiumMap: React.FC<CesiumMapProps> = ({
@@ -26,6 +27,7 @@ export const CesiumMap: React.FC<CesiumMapProps> = ({
   height = "h-full",
   className = "",
   interactive = true,
+  fullscreen = false,
 }) => {
   const activeStartPos = startPos || ambulancePos;
   const containerRef = useRef<HTMLDivElement>(null);
@@ -214,7 +216,11 @@ export const CesiumMap: React.FC<CesiumMapProps> = ({
   };
 
   return (
-    <div className={`relative w-full ${height} ${className} bg-slate-100 overflow-hidden rounded-2xl border border-slate-300 shadow-md cursor-grab active:cursor-grabbing`}>
+    <div className={`relative w-full ${height} ${className} overflow-hidden cursor-grab active:cursor-grabbing ${
+      fullscreen
+        ? 'bg-white'                                            // edge-to-edge, no rounding/border
+        : 'bg-slate-100 rounded-2xl border border-slate-300 shadow-md'
+    }`}>
       {/* Map Canvas */}
       <div ref={containerRef} className="w-full h-full z-0" />
 
@@ -229,14 +235,16 @@ export const CesiumMap: React.FC<CesiumMapProps> = ({
             </span>
           </div>
           <p className="text-[10px] sm:text-[11px] text-slate-600 truncate">
-            <span className="font-semibold text-slate-800">{startName}</span> $\rightarrow$ <span className="font-bold text-blue-700">{targetName}</span>
+            <span className="font-semibold text-slate-800">{startName}</span> &rarr; <span className="font-bold text-blue-700">{targetName}</span>
           </p>
         </div>
       </div>
 
-      {/* Responsive Floating ETA Card */}
+      {/* Responsive Floating ETA Card — pushed up higher in fullscreen so it clears the pickup panel */}
       {routeData && (
-        <div className="absolute bottom-16 sm:bottom-auto sm:top-3 right-3 z-10 flex items-center gap-2 sm:gap-3 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-blue-600 text-white shadow-xl">
+        <div className={`absolute right-3 z-10 flex items-center gap-2 sm:gap-3 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-blue-600 text-white shadow-xl ${
+          fullscreen ? 'bottom-60 sm:bottom-56' : 'bottom-16 sm:bottom-auto sm:top-3'
+        }`}>
           <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-200 animate-spin" />
           <div>
             <div className="text-[10px] sm:text-xs text-blue-100 uppercase font-semibold">Live Route ETA</div>
@@ -247,9 +255,11 @@ export const CesiumMap: React.FC<CesiumMapProps> = ({
         </div>
       )}
 
-      {/* Responsive Controls */}
+      {/* Responsive Controls — pushed up in fullscreen so they clear the pickup panel */}
       {interactive && (
-        <div className="absolute bottom-4 right-3 z-10 flex sm:flex-col gap-1.5 sm:gap-2">
+        <div className={`absolute right-3 z-10 flex sm:flex-col gap-1.5 sm:gap-2 ${
+          fullscreen ? 'bottom-56 sm:bottom-52' : 'bottom-4'
+        }`}>
           <button
             onClick={handleZoomIn}
             className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 flex items-center justify-center shadow-lg transition-all"

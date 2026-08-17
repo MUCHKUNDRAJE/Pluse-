@@ -146,17 +146,17 @@ export default function PatientPage() {
       )}
 
       {/* Patient Header */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-200 flex flex-wrap items-center justify-between gap-4 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
-            <User className="w-7 h-7" />
+      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 flex flex-col gap-4 shadow-sm">
+        <div className="flex items-start gap-3">
+          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 flex-shrink-0">
+            <User className="w-6 h-6 sm:w-7 sm:h-7" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-              Patient Emergency Dispatch Tracking
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-2xl font-bold text-slate-900 leading-tight">
+              Patient Emergency Tracking
             </h1>
-            <p className="text-xs text-slate-500 font-mono">
-              Patient: <span className="text-slate-900 font-bold">{patient.name}</span> ({patient.locationName}) • Incident Reg: <span className="text-blue-700 font-bold">{patient.registrationNumber}</span>
+            <p className="text-[11px] sm:text-xs text-slate-500 font-mono mt-0.5 line-clamp-2">
+              Patient: <span className="text-slate-900 font-bold">{patient.name}</span> &bull; Reg: <span className="text-blue-700 font-bold">{patient.registrationNumber}</span>
             </p>
           </div>
         </div>
@@ -170,18 +170,18 @@ export default function PatientPage() {
             <span>Nandanvan, Nagpur</span>
           </button>
 
-          <form onSubmit={handleSearchLocation} className="flex items-center gap-1">
+          <form onSubmit={handleSearchLocation} className="flex items-center gap-1 flex-1 min-w-0">
             <input
               type="text"
               placeholder="Search Area..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="px-3 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:border-blue-500 text-slate-900 placeholder-slate-400 w-36 sm:w-44"
+              className="px-3 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:border-blue-500 text-slate-900 placeholder-slate-400 w-full sm:w-44"
             />
             <button
               type="submit"
               disabled={isSearching}
-              className="p-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold flex items-center justify-center transition-all"
+              className="p-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold flex items-center justify-center transition-all flex-shrink-0"
               title="Search Location"
             >
               <Search className="w-4 h-4" />
@@ -191,7 +191,7 @@ export default function PatientPage() {
           <button
             onClick={handleFetchUserLocation}
             disabled={isLocating}
-            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
+            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all flex-shrink-0"
           >
             <Locate className={`w-3.5 h-3.5 ${isLocating ? 'animate-spin' : ''}`} />
             <span>{isLocating ? 'Locating...' : 'Detect GPS'}</span>
@@ -279,15 +279,15 @@ export default function PatientPage() {
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-2 text-xs font-mono text-slate-500">
-              <span>LIVE AMBULANCE APPROACH MAP • MIN DISTANCE SEARCH</span>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-1 text-xs font-mono text-slate-500">
+              <span>LIVE AMBULANCE APPROACH MAP</span>
               <span className="text-blue-700 font-bold">REAL-TIME OSRM TELEMETRY</span>
             </div>
             <CesiumMap
               ambulancePos={[ambulance.currentLat, ambulance.currentLng]}
               targetPos={[patient.lat, patient.lng]}
               targetName={`Your GPS: ${patient.locationName}`}
-              height="h-64"
+              height="h-48 sm:h-64"
               routeData={routeData}
             />
           </div>

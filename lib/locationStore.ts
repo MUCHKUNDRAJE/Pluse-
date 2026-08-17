@@ -15,8 +15,6 @@ const DEFAULT_NAGPUR_LAT = 21.1384;
 const DEFAULT_NAGPUR_LNG = 79.1235;
 const ACTIVE_HOSPITAL_KEY = 'pulse_active_assigned_hospital';
 
-// fklikjklfjklggjgkjkglj
-
 /**
  * Real Nagpur & Maharashtra Hospitals Dataset
  */
@@ -179,7 +177,6 @@ export async function getRealLocationAndHospitals(
   const isNearNagpur = Math.hypot((userLat - DEFAULT_NAGPUR_LAT) * 111, (userLng - DEFAULT_NAGPUR_LNG) * 111) < 50;
 
   if (isNearNagpur) {
-    // Compute exact distance in km for all Nagpur hospitals
     rawCandidates = NAGPUR_REAL_HOSPITALS.map((h) => {
       const dLat = (h.lat - userLat) * 111;
       const dLng = (h.lng - userLng) * 111 * Math.cos((userLat + h.lat) / 2 * (Math.PI / 180));
@@ -194,7 +191,6 @@ export async function getRealLocationAndHospitals(
       };
     });
   } else {
-    // Fetch OSM Hospitals
     try {
       const searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=hospital&lat=${userLat}&lon=${userLng}&limit=10`;
       const res = await fetch(searchUrl, {
@@ -247,10 +243,8 @@ export async function getRealLocationAndHospitals(
     rawCandidates = NAGPUR_REAL_HOSPITALS;
   }
 
-  // Sort strictly by MINIMUM DISTANCE (Min Km)
   rawCandidates.sort((a, b) => a.distanceKm - b.distanceKm);
 
-  // INCREMENTAL RADIUS EXPANSION ALGORITHM: (1km -> 2km -> 3km -> 5km -> 10km -> 20km)
   const expansionSteps = [1.0, 2.0, 3.0, 5.0, 10.0, 20.0];
   let searchRadiusKm = 1.0;
   let nearbyHospitals: Hospital[] = [];
@@ -270,7 +264,6 @@ export async function getRealLocationAndHospitals(
 
   const assignedHospital = nearbyHospitals[0];
 
-  // Save assigned hospital to LocalStorage for cross-tab sync
   if (typeof window !== 'undefined') {
     try {
       localStorage.setItem(ACTIVE_HOSPITAL_KEY, JSON.stringify(assignedHospital));

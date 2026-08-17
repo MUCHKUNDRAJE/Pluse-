@@ -6,7 +6,7 @@ import { TripStatusPanel } from '@/components/ambulance/TripStatusPanel';
 import { fetchOsrmRoute, RouteSegment } from '@/lib/osrm';
 import { mockAmbulances, mockPatients, mockHospitals, Hospital, Patient, Ambulance } from '@/lib/mockData';
 import { getRealLocationAndHospitals, geocodeCityOrAddress } from '@/lib/locationStore';
-import { Truck, Locate, Search, MapPin, Building2 } from 'lucide-react';
+import { Truck, Locate, Search, MapPin, Building2, Expand, Shrink } from 'lucide-react';
 
 export default function AmbulanceDriverPage() {
   const [ambulance, setAmbulance] = useState<Ambulance>(mockAmbulances[0]);
@@ -18,6 +18,7 @@ export default function AmbulanceDriverPage() {
   const [locationNotice, setLocationNotice] = useState<string | null>("Radius Expansion Search (1km → 2km → 5km) active...");
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const [isMapFullscreen, setIsMapFullscreen] = useState(false);
 
   const isPatientPickedUp = currentStageIndex >= 2;
 
@@ -183,7 +184,7 @@ export default function AmbulanceDriverPage() {
       )}
 
       {/* Page Title Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600">
             <Truck className="w-6 h-6 animate-pulse" />
@@ -234,12 +235,40 @@ export default function AmbulanceDriverPage() {
             <Locate className={`w-4 h-4 ${isLocating ? 'animate-spin' : ''}`} />
             <span>{isLocating ? 'Locating...' : 'Detect GPS'}</span>
           </button>
+
+          {/* Fullscreen Map Toggle */}
+          <button
+            onClick={() => setIsMapFullscreen((prev) => !prev)}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-sm transition-all border ${isMapFullscreen
+                ? 'bg-slate-900 text-white border-slate-700'
+                : 'bg-white hover:bg-slate-50 text-slate-800 border-slate-300'
+              }`}
+            title={isMapFullscreen ? 'Exit Fullscreen Map' : 'Fullscreen Map'}
+          >
+            {isMapFullscreen ? <Shrink className="w-4 h-4" /> : <Expand className="w-4 h-4" />}
+            <span>{isMapFullscreen ? 'Exit Fullscreen' : 'Full Map'}</span>
+          </button>
         </div>
       </div>
 
-      {/* Main Grid: White Light Map Canvas with Dragging + Trip Status Panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-7 h-[500px] lg:h-[650px] sticky top-20">
+      {/* Main Grid: Map on top on mobile, side-by-side on desktop */}
+      <div className={`flex flex-col gap-4 lg:gap-6 ${isMapFullscreen ? '' : 'lg:grid lg:grid-cols-12'
+        }`}>
+        {/* Map — Fullscreen: fixed overlay edge-to-edge, Normal: column */}
+        <div className={`transition-all duration-300 relative ${isMapFullscreen
+            ? 'fixed inset-0 z-50'
+            : 'w-full lg:col-span-7 lg:sticky lg:top-20 h-64 sm:h-[420px] lg:h-[650px]'
+          }`}>
+          {/* Fullscreen Exit Button overlay */}
+          {isMapFullscreen && (
+            <button
+              onClick={() => setIsMapFullscreen(false)}
+              className="absolute top-4 left-4 z-[60] flex items-center gap-2 px-3.5 py-2 bg-slate-900 text-white rounded-xl text-xs font-extrabold shadow-xl border border-slate-700 hover:bg-slate-800 transition-all"
+            >
+              <Shrink className="w-4 h-4" />
+              <span>Exit Fullscreen</span>
+            </button>
+          )}
           <CesiumMap
             startPos={startPos}
             ambulancePos={[ambulance.currentLat, ambulance.currentLng]}
@@ -247,20 +276,24 @@ export default function AmbulanceDriverPage() {
             startName={startName}
             targetName={targetName}
             routeData={routeData}
-            height="h-full"
+            height={isMapFullscreen ? 'h-full' : 'h-full'}
             interactive={true}
+            fullscreen={isMapFullscreen}
           />
         </div>
 
-        <div className="lg:col-span-5 space-y-4">
-          <TripStatusPanel
-            currentStageIndex={currentStageIndex}
-            onAdvanceStage={handleAdvanceStage}
-            patient={patient}
-            assignedHospital={assignedHospital}
-            onSelectHospital={handleSelectHospital}
-          />
-        </div>
+        {/* Trip Status Panel — hidden in fullscreen */}
+        {!isMapFullscreen && (
+          <div className="w-full lg:col-span-5 space-y-4">
+            <TripStatusPanel
+              currentStageIndex={currentStageIndex}
+              onAdvanceStage={handleAdvanceStage}
+              patient={patient}
+              assignedHospital={assignedHospital}
+              onSelectHospital={handleSelectHospital}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

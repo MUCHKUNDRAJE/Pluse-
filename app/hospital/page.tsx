@@ -62,37 +62,37 @@ export default function HospitalPage() {
       )}
 
       {/* Hospital Operations Header */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-200 flex flex-wrap items-center justify-between gap-4 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600">
-            <HospitalIcon className="w-7 h-7" />
+      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 flex flex-col gap-4 shadow-sm">
+        <div className="flex items-start gap-3">
+          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 flex-shrink-0">
+            <HospitalIcon className="w-6 h-6 sm:w-7 sm:h-7" />
           </div>
-          <div>
-            <h1 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-2xl font-extrabold text-slate-900 leading-tight line-clamp-2">
               {currentHospital.name}
             </h1>
-            <p className="text-xs text-slate-500 font-mono">
-              {currentHospital.address} • <span className="text-emerald-700 font-bold">{currentHospital.traumaCenterLevel}</span> • Distance: <span className="text-blue-700 font-bold">{currentHospital.distanceKm} km (&lt; 5 km)</span>
+            <p className="text-[11px] sm:text-xs text-slate-500 font-mono mt-0.5 line-clamp-2">
+              {currentHospital.address} &bull; <span className="text-emerald-700 font-bold">{currentHospital.traumaCenterLevel}</span> &bull; <span className="text-blue-700 font-bold">{currentHospital.distanceKm} km (&lt;5 km)</span>
             </p>
           </div>
         </div>
 
         {/* Action Controls: GPS Sync + Tab Switcher */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           <button
             onClick={handleDetectNearestHospital}
             disabled={isLocating}
-            className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-sm transition-all"
+            className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 shadow-sm transition-all flex-shrink-0"
           >
             <Locate className={`w-3.5 h-3.5 ${isLocating ? 'animate-spin' : ''}`} />
-            <span>{isLocating ? 'Locating...' : 'Sync Nearest Hospital (< 5 km)'}</span>
+            <span>{isLocating ? 'Locating...' : 'Sync Nearest Hospital (&lt;5 km)'}</span>
           </button>
 
-          {/* Navigation Tabs */}
-          <div className="flex items-center gap-1 bg-slate-100 p-1.5 rounded-xl border border-slate-200 text-xs font-bold">
+          {/* Navigation Tabs — horizontally scrollable on mobile */}
+          <div className="flex items-center gap-1 bg-slate-100 p-1.5 rounded-xl border border-slate-200 text-xs font-bold overflow-x-auto">
             <button
               onClick={() => setActiveTab('feed')}
-              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${
                 activeTab === 'feed'
                   ? 'bg-white text-blue-700 shadow-sm font-bold border border-slate-200'
                   : 'text-slate-600 hover:text-slate-900'
@@ -104,7 +104,7 @@ export default function HospitalPage() {
 
             <button
               onClick={() => setActiveTab('readiness')}
-              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${
                 activeTab === 'readiness'
                   ? 'bg-white text-blue-700 shadow-sm font-bold border border-slate-200'
                   : 'text-slate-600 hover:text-slate-900'
@@ -116,7 +116,7 @@ export default function HospitalPage() {
 
             <button
               onClick={() => setActiveTab('occupancy')}
-              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${
                 activeTab === 'occupancy'
                   ? 'bg-white text-blue-700 shadow-sm font-bold border border-slate-200'
                   : 'text-slate-600 hover:text-slate-900'

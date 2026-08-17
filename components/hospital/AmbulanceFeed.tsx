@@ -60,22 +60,22 @@ export const AmbulanceFeed: React.FC = () => {
               {/* Card Header */}
               <div
                 onClick={() => toggleExpand(amb.id)}
-                className="p-4 cursor-pointer flex flex-wrap items-center justify-between gap-3"
+                className="p-3 sm:p-4 cursor-pointer flex items-start sm:items-center justify-between gap-3"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-red-50 border border-red-200 flex items-center justify-center text-red-600">
-                    <Truck className="w-6 h-6 animate-bounce" />
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-red-50 border border-red-200 flex items-center justify-center text-red-600 flex-shrink-0">
+                    <Truck className="w-5 h-5 sm:w-6 sm:h-6 animate-bounce" />
                   </div>
 
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-extrabold text-base text-slate-900">{amb.vehicleNumber}</span>
-                      <span className="text-xs text-slate-500">({amb.driverName})</span>
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="font-extrabold text-sm sm:text-base text-slate-900">{amb.vehicleNumber}</span>
+                      <span className="text-xs text-slate-500 truncate">({amb.driverName})</span>
                     </div>
 
-                    <div className="flex items-center gap-2 mt-1">
-                      <User className="w-3.5 h-3.5 text-slate-400" />
-                      <span className="text-xs font-semibold text-slate-800">
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <User className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                      <span className="text-xs font-semibold text-slate-800 truncate">
                         {patient.name}, {patient.age}y ({patient.gender})
                       </span>
                     </div>
@@ -83,11 +83,11 @@ export const AmbulanceFeed: React.FC = () => {
                 </div>
 
                 {/* Status & ETA */}
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <div className="text-right">
                     <StatusBadge status={amb.currentStageIndex >= 3 ? 'complete' : 'in-progress'} label={getStatusText(amb.currentStageIndex)} />
-                    <div className="text-xs font-mono text-blue-700 font-extrabold mt-1">
-                      ETA: {amb.etaMins} MINS ({amb.distanceToTargetKm} km)
+                    <div className="text-xs font-mono text-blue-700 font-extrabold mt-1 whitespace-nowrap">
+                      ETA: {amb.etaMins}m ({amb.distanceToTargetKm}km)
                     </div>
                   </div>
 
@@ -99,11 +99,11 @@ export const AmbulanceFeed: React.FC = () => {
 
               {/* Expandable Mini Map Preview */}
               {isExpanded && (
-                <div className="p-4 bg-slate-50 border-t border-slate-200 space-y-4">
-                  {/* Patient Triage Snapshot */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-white p-3 rounded-xl border border-slate-200 text-xs shadow-sm">
+                <div className="p-3 sm:p-4 bg-slate-50 border-t border-slate-200 space-y-4">
+                  {/* Patient Triage Snapshot — stacks on mobile */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-white p-3 rounded-xl border border-slate-200 text-xs shadow-sm">
                     <div>
-                      <span className="text-slate-500 block mb-0.5 font-medium">Primary Reported Symptoms:</span>
+                      <span className="text-slate-500 block mb-0.5 font-medium">Reported Symptoms:</span>
                       <div className="flex flex-wrap gap-1">
                         {patient.reportedSymptoms.map((symp) => (
                           <span key={symp} className="px-2 py-0.5 bg-red-50 text-red-700 border border-red-200 rounded font-semibold">
@@ -114,10 +114,10 @@ export const AmbulanceFeed: React.FC = () => {
                     </div>
 
                     <div>
-                      <span className="text-slate-500 block mb-0.5 font-medium">Live Vitals Snapshot:</span>
+                      <span className="text-slate-500 block mb-0.5 font-medium">Live Vitals:</span>
                       <div className="space-y-0.5 text-slate-800">
                         <div>BP: <span className="font-mono text-red-600 font-bold">{patient.vitals.bpSystolic}/{patient.vitals.bpDiastolic} mmHg</span></div>
-                        <div>SpO₂: <span className="font-mono text-amber-600 font-bold">{patient.vitals.spo2}%</span> | Pulse: <span className="font-mono text-blue-600 font-bold">{patient.vitals.heartRate} bpm</span></div>
+                        <div>SpO₂: <span className="font-mono text-amber-600 font-bold">{patient.vitals.spo2}%</span> | HR: <span className="font-mono text-blue-600 font-bold">{patient.vitals.heartRate} bpm</span></div>
                       </div>
                     </div>
 
@@ -125,22 +125,22 @@ export const AmbulanceFeed: React.FC = () => {
                       <span className="text-slate-500 block mb-0.5 font-medium">Driver Telemetry:</span>
                       <div className="space-y-0.5 text-slate-800">
                         <div>Speed: <span className="font-mono text-emerald-600 font-bold">{amb.speedKmH} km/h</span></div>
-                        <div>Driver Phone: <span className="font-mono text-slate-900">{amb.driverPhone}</span></div>
+                        <div className="truncate">Phone: <span className="font-mono text-slate-900">{amb.driverPhone}</span></div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Embedded White Light Map */}
+                  {/* Embedded Mini Route Map */}
                   <div>
-                    <div className="flex items-center justify-between mb-2 text-xs text-slate-500 font-mono">
-                      <span>MINI ROUTE PREVIEW • FREE OSRM LIVE GEOMETRY</span>
-                      <span className="text-blue-700 font-bold">AMBULANCE → APEX SUPER SPECIALTY HOSPITAL</span>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-1 text-[11px] text-slate-500 font-mono">
+                      <span>MINI ROUTE PREVIEW • OSRM TELEMETRY</span>
+                      <span className="text-blue-700 font-bold">AMBULANCE → HOSPITAL</span>
                     </div>
                     <CesiumMap
                       ambulancePos={[amb.currentLat, amb.currentLng]}
                       targetPos={[28.6139, 77.2090]}
                       targetName="Apex Hospital Emergency Bay"
-                      height="h-56"
+                      height="h-40 sm:h-56"
                       routeData={{
                         coordinates: [
                           [amb.currentLat, amb.currentLng],
