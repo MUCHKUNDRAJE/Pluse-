@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
-import { ZoomIn, ZoomOut, Locate, Globe, Clock } from 'lucide-react';
+import { ZoomIn, ZoomOut, Locate, Globe, Clock, Maximize, Minimize } from 'lucide-react';
 import { RouteSegment } from '@/lib/osrm';
 
 interface CesiumMapProps {
@@ -15,6 +15,7 @@ interface CesiumMapProps {
   className?: string;
   interactive?: boolean;
   fullscreen?: boolean;
+  onToggleFullscreen?: () => void;
 }
 
 export const CesiumMap: React.FC<CesiumMapProps> = ({
@@ -28,9 +29,11 @@ export const CesiumMap: React.FC<CesiumMapProps> = ({
   className = "",
   interactive = true,
   fullscreen = false,
+  onToggleFullscreen,
 }) => {
   const activeStartPos = startPos || ambulancePos;
   const containerRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<any>(null);
   const tileLayerRef = useRef<any>(null);
   const startMarkerRef = useRef<any>(null);
@@ -41,12 +44,13 @@ export const CesiumMap: React.FC<CesiumMapProps> = ({
 
   const [viewMode, setViewMode] = useState<'Light' | 'OSM'>('Light');
   const [isClient, setIsClient] = useState(false);
+  const [nativeFullscreen, setNativeFullscreen] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // Initialize Leaflet Map with automatic container resize responsiveness
+  // Initialize Leaflet Map
   useEffect(() => {
     if (!isClient || !containerRef.current || leafletMap.current) return;
 
@@ -139,7 +143,6 @@ export const CesiumMap: React.FC<CesiumMapProps> = ({
 
     initLeaflet();
 
-    // Auto handle window resize for responsiveness
     const handleResize = () => {
       if (leafletMap.current) {
         leafletMap.current.invalidateSize();
@@ -156,6 +159,22 @@ export const CesiumMap: React.FC<CesiumMapProps> = ({
       }
     };
   }, [isClient]);
+
+  // Recalculate Leaflet map dimensions when fullscreen state changes
+  useEffect(() => {
+    if (leafletMap.current) {
+      const timer1 = setTimeout(() => {
+        if (leafletMap.current) leafletMap.current.invalidateSize();
+      }, 50);
+      const timer2 = setTimeout(() => {
+        if (leafletMap.current) leafletMap.current.invalidateSize();
+      }, 300);
+      return () => {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+      };
+    }
+  }, [fullscreen, nativeFullscreen]);
 
   // Update Markers
   useEffect(() => {
@@ -175,7 +194,7 @@ export const CesiumMap: React.FC<CesiumMapProps> = ({
     }
   }, [activeStartPos, targetPos, startName, targetName]);
 
-  // Update OSRM Polyline with Responsive Fit Bounds
+  // Update OSRM Polyline
   useEffect(() => {
     if (!leafletMap.current || !routePolylineRef.current || !routeGlowRef.current) return;
 
@@ -215,12 +234,41 @@ export const CesiumMap: React.FC<CesiumMapProps> = ({
     }
   };
 
+  // Fullscreen trigger handler
+  const handleFullscreenToggle = () => {
+    if (onToggleFullscreen) {
+      onToggleFullscreen();
+      return;
+    }
+
+    if (wrapperRef.current) {
+      if (!document.fullscreenElement) {
+        wrapperRef.current.requestFullscreen().then(() => {
+          setNativeFullscreen(true);
+          if (leafletMap.current) setTimeout(() => leafletMap.current.invalidateSize(), 150);
+        }).catch((err) => {
+          console.warn("Fullscreen request error:", err);
+        });
+      } else {
+        document.exitFullscreen().then(() => {
+          setNativeFullscreen(false);
+          if (leafletMap.current) setTimeout(() => leafletMap.current.invalidateSize(), 150);
+        });
+      }
+    }
+  };
+
+  const isFull = fullscreen || nativeFullscreen;
+
   return (
-    <div className={`relative w-full ${height} ${className} overflow-hidden cursor-grab active:cursor-grabbing ${
-      fullscreen
-        ? 'bg-white'                                            // edge-to-edge, no rounding/border
-        : 'bg-slate-100 rounded-2xl border border-slate-300 shadow-md'
-    }`}>
+    <div
+      ref={wrapperRef}
+      className={`relative w-full ${height} ${className} overflow-hidden cursor-grab active:cursor-grabbing ${
+        isFull
+          ? 'bg-white font-sans'
+          : 'bg-slate-100 rounded-2xl border border-slate-300 shadow-md'
+      }`}
+    >
       {/* Map Canvas */}
       <div ref={containerRef} className="w-full h-full z-0" />
 
@@ -240,10 +288,10 @@ export const CesiumMap: React.FC<CesiumMapProps> = ({
         </div>
       </div>
 
-      {/* Responsive Floating ETA Card — pushed up higher in fullscreen so it clears the pickup panel */}
+      {/* Floating ETA Card */}
       {routeData && (
         <div className={`absolute right-3 z-10 flex items-center gap-2 sm:gap-3 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-blue-600 text-white shadow-xl ${
-          fullscreen ? 'bottom-60 sm:bottom-56' : 'bottom-16 sm:bottom-auto sm:top-3'
+          isFull ? 'bottom-60 sm:bottom-56' : 'bottom-16 sm:bottom-auto sm:top-3'
         }`}>
           <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-200 animate-spin" />
           <div>
@@ -255,10 +303,10 @@ export const CesiumMap: React.FC<CesiumMapProps> = ({
         </div>
       )}
 
-      {/* Responsive Controls — pushed up in fullscreen so they clear the pickup panel */}
+      {/* Map Control Toolbar (Zoom In, Zoom Out, Recenter, FULLSCREEN, Toggle Map Style) */}
       {interactive && (
         <div className={`absolute right-3 z-10 flex sm:flex-col gap-1.5 sm:gap-2 ${
-          fullscreen ? 'bottom-56 sm:bottom-52' : 'bottom-4'
+          isFull ? 'bottom-56 sm:bottom-52' : 'bottom-4'
         }`}>
           <button
             onClick={handleZoomIn}
@@ -282,6 +330,19 @@ export const CesiumMap: React.FC<CesiumMapProps> = ({
             title="Recenter Map"
           >
             <Locate className="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
+
+          {/* DEDICATED FULLSCREEN BUTTON ON MAP CONTROL TOOLBAR */}
+          <button
+            onClick={handleFullscreenToggle}
+            className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shadow-lg transition-all ${
+              isFull
+                ? 'bg-purple-600 text-white border-purple-700 font-bold'
+                : 'bg-white hover:bg-slate-50 text-purple-600 border-slate-300'
+            }`}
+            title={isFull ? 'Exit Fullscreen' : 'Fullscreen Map'}
+          >
+            {isFull ? <Minimize className="w-4 h-4 sm:w-5 sm:h-5" /> : <Maximize className="w-4 h-4 sm:w-5 sm:h-5" />}
           </button>
 
           <button

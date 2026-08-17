@@ -55,7 +55,7 @@ export default function AmbulanceDriverPage() {
     loadRoute();
   }, [startPos[0], startPos[1], targetPos[0], targetPos[1]]);
 
-  // Core Geolocation Fetch with Radius Expansion Notice
+  // Core Geolocation Fetch
   const handleFetchUserLocation = () => {
     setIsLocating(true);
     setLocationNotice("Searching radius: 1km → 2km → 3km → 5km...");
@@ -199,7 +199,7 @@ export default function AmbulanceDriverPage() {
           </div>
         </div>
 
-        {/* GPS Actions & Preset Buttons */}
+        {/* GPS Actions & Fullscreen Buttons */}
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={loadNagpurPreset}
@@ -236,13 +236,14 @@ export default function AmbulanceDriverPage() {
             <span>{isLocating ? 'Locating...' : 'Detect GPS'}</span>
           </button>
 
-          {/* Fullscreen Map Toggle */}
+          {/* Fullscreen Map Toggle Button */}
           <button
             onClick={() => setIsMapFullscreen((prev) => !prev)}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-sm transition-all border ${isMapFullscreen
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-sm transition-all border ${
+              isMapFullscreen
                 ? 'bg-slate-900 text-white border-slate-700'
-                : 'bg-white hover:bg-slate-50 text-slate-800 border-slate-300'
-              }`}
+                : 'bg-purple-600 hover:bg-purple-700 text-white border-purple-600'
+            }`}
             title={isMapFullscreen ? 'Exit Fullscreen Map' : 'Fullscreen Map'}
           >
             {isMapFullscreen ? <Shrink className="w-4 h-4" /> : <Expand className="w-4 h-4" />}
@@ -251,24 +252,78 @@ export default function AmbulanceDriverPage() {
         </div>
       </div>
 
-      {/* Main Grid: Map on top on mobile, side-by-side on desktop */}
-      <div className={`flex flex-col gap-4 lg:gap-6 ${isMapFullscreen ? '' : 'lg:grid lg:grid-cols-12'
+      {/* Main Grid: White Light Map Canvas with Fullscreen Support + Trip Status Panel */}
+      <div className={`flex flex-col gap-4 lg:gap-6 ${
+        isMapFullscreen ? '' : 'lg:grid lg:grid-cols-12'
+      }`}>
+        {/* Map — Fullscreen: High z-index fixed viewport overlay, Normal: column */}
+        <div className={`transition-all duration-300 ${
+          isMapFullscreen
+            ? 'fixed top-0 left-0 w-screen h-screen z-[99999] bg-white p-0 m-0 overflow-hidden'
+            : 'w-full lg:col-span-7 lg:sticky lg:top-20 h-64 sm:h-[420px] lg:h-[650px] relative'
         }`}>
-        {/* Map — Fullscreen: fixed overlay edge-to-edge, Normal: column */}
-        <div className={`transition-all duration-300 relative ${isMapFullscreen
-            ? 'fixed inset-0 z-50'
-            : 'w-full lg:col-span-7 lg:sticky lg:top-20 h-64 sm:h-[420px] lg:h-[650px]'
-          }`}>
           {/* Fullscreen Exit Button overlay */}
           {isMapFullscreen && (
             <button
               onClick={() => setIsMapFullscreen(false)}
-              className="absolute top-4 left-4 z-[60] flex items-center gap-2 px-3.5 py-2 bg-slate-900 text-white rounded-xl text-xs font-extrabold shadow-xl border border-slate-700 hover:bg-slate-800 transition-all"
+              className="absolute top-4 left-4 z-[100000] flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-extrabold shadow-2xl border border-slate-700 hover:bg-slate-800 transition-all cursor-pointer"
             >
-              <Shrink className="w-4 h-4" />
-              <span>Exit Fullscreen</span>
+              <Shrink className="w-4 h-4 text-purple-400" />
+              <span>Exit Fullscreen Map</span>
             </button>
           )}
+
+          {/* Floating Fullscreen Action Panel */}
+          {isMapFullscreen && (
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[100000] w-[calc(100%-2rem)] max-w-md">
+              <div className="bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl shadow-2xl p-4 space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-mono text-slate-500 uppercase tracking-wider">Current Stage</span>
+                  <span className={`px-2.5 py-1 rounded-lg font-extrabold text-[11px] ${
+                    currentStageIndex >= 2 ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
+                    : 'bg-amber-100 text-amber-700 border border-amber-300'
+                  }`}>
+                    {['Dispatched', 'En Route Patient', 'Patient Picked Up', 'En Route Hospital', 'Arrived'][currentStageIndex]}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3 bg-slate-50 rounded-xl p-2.5 border border-slate-200 text-xs">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-slate-400 text-[10px] uppercase font-mono">
+                      {isPatientPickedUp ? 'Patient (Onboard)' : 'Patient Location'}
+                    </div>
+                    <div className="font-bold text-slate-900 truncate">{patient.name}</div>
+                    <div className="text-slate-500 truncate text-[11px]">{patient.locationName}</div>
+                  </div>
+                  <Truck className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                  <div className="flex-1 min-w-0 text-right">
+                    <div className="text-slate-400 text-[10px] uppercase font-mono">Hospital</div>
+                    <div className="font-bold text-slate-900 truncate">{assignedHospital.name}</div>
+                    <div className="text-blue-600 font-mono font-bold text-[11px]">{assignedHospital.distanceKm} km • {assignedHospital.etaMins} mins</div>
+                  </div>
+                </div>
+
+                {currentStageIndex < 4 ? (
+                  <button
+                    onClick={handleAdvanceStage}
+                    className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-red-600 via-amber-600 to-emerald-600 hover:from-red-700 hover:to-emerald-700 text-white font-extrabold text-sm uppercase tracking-wide shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95"
+                  >
+                    <Truck className="w-5 h-5" />
+                    {currentStageIndex === 0 && 'Confirm Dispatch Acknowledgement'}
+                    {currentStageIndex === 1 && '✓ Mark Patient Picked Up'}
+                    {currentStageIndex === 2 && 'Start Transit to Hospital'}
+                    {currentStageIndex === 3 && 'Mark Arrived at Emergency Bay'}
+                  </button>
+                ) : (
+                  <div className="w-full py-3 px-4 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 font-bold text-sm text-center flex items-center justify-center gap-2">
+                    <Truck className="w-4 h-4" />
+                    Trip Complete — Patient Handover Done
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           <CesiumMap
             startPos={startPos}
             ambulancePos={[ambulance.currentLat, ambulance.currentLng]}
@@ -279,10 +334,11 @@ export default function AmbulanceDriverPage() {
             height={isMapFullscreen ? 'h-full' : 'h-full'}
             interactive={true}
             fullscreen={isMapFullscreen}
+            onToggleFullscreen={() => setIsMapFullscreen((prev) => !prev)}
           />
         </div>
 
-        {/* Trip Status Panel — hidden in fullscreen */}
+        {/* Trip Status Panel */}
         {!isMapFullscreen && (
           <div className="w-full lg:col-span-5 space-y-4">
             <TripStatusPanel
