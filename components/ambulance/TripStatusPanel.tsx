@@ -63,12 +63,12 @@ export const TripStatusPanel: React.FC<TripStatusPanelProps> = ({
         <StageStepper stages={stages} currentStageIndex={currentStageIndex} />
       </div>
 
-      {/* Main Action Button */}
+      {/* Main Action Button (Solid Red Color, No Gradient) */}
       <div className="pt-1">
         {currentStageIndex < 4 ? (
           <button
             onClick={onAdvanceStage}
-            className="w-full py-3.5 sm:py-4 px-4 sm:px-6 rounded-xl bg-gradient-to-r from-red-600 via-amber-600 to-emerald-600 hover:from-red-700 hover:to-emerald-700 text-white font-extrabold text-sm sm:text-lg tracking-wide uppercase shadow-lg shadow-red-500/20 flex items-center justify-center gap-2 sm:gap-3 transition-all active:scale-95"
+            className="w-full py-3.5 sm:py-4 px-4 sm:px-6 rounded-xl bg-red-600 hover:bg-red-700 text-white font-extrabold text-sm sm:text-lg tracking-wide uppercase shadow-lg shadow-red-600/30 flex items-center justify-center gap-2 sm:gap-3 transition-all active:scale-95"
           >
             <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6" />
             {currentStageIndex === 1 && "Mark Patient Picked Up"}

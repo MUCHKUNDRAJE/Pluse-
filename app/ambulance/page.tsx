@@ -306,7 +306,7 @@ export default function AmbulanceDriverPage() {
                 {currentStageIndex < 4 ? (
                   <button
                     onClick={handleAdvanceStage}
-                    className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-red-600 via-amber-600 to-emerald-600 hover:from-red-700 hover:to-emerald-700 text-white font-extrabold text-sm uppercase tracking-wide shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95"
+                    className="w-full py-3.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-extrabold text-sm uppercase tracking-wide shadow-lg shadow-red-600/30 flex items-center justify-center gap-2 transition-all active:scale-95"
                   >
                     <Truck className="w-5 h-5" />
                     {currentStageIndex === 0 && 'Confirm Dispatch Acknowledgement'}
