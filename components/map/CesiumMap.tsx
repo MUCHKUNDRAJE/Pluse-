@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { ZoomIn, ZoomOut, Locate, Globe, Clock, Maximize, Minimize } from 'lucide-react';
 import { RouteSegment } from '@/lib/osrm';
+import { Hospital } from '@/lib/mockData';
 
 interface CesiumMapProps {
   startPos?: [number, number];
@@ -15,6 +16,8 @@ interface CesiumMapProps {
   className?: string;
   interactive?: boolean;
   fullscreen?: boolean;
+  hospitals?: Hospital[];
+  onSelectHospital?: (hospital: Hospital) => void;
   onToggleFullscreen?: () => void;
 }
 
@@ -29,6 +32,8 @@ export const CesiumMap: React.FC<CesiumMapProps> = ({
   className = "",
   interactive = true,
   fullscreen = false,
+  hospitals = [],
+  onSelectHospital,
   onToggleFullscreen,
 }) => {
   const activeStartPos = startPos || ambulancePos;
@@ -40,6 +45,7 @@ export const CesiumMap: React.FC<CesiumMapProps> = ({
   const targetMarkerRef = useRef<any>(null);
   const routePolylineRef = useRef<any>(null);
   const routeGlowRef = useRef<any>(null);
+  const hospitalMarkersGroupRef = useRef<any>(null);
   const LRef = useRef<any>(null);
 
   const [viewMode, setViewMode] = useState<'Light' | 'OSM'>('Light');
@@ -134,6 +140,8 @@ export const CesiumMap: React.FC<CesiumMapProps> = ({
         opacity: 1,
       }).addTo(map);
 
+      hospitalMarkersGroupRef.current = L.layerGroup().addTo(map);
+
       setTimeout(() => {
         if (leafletMap.current) {
           leafletMap.current.invalidateSize();
@@ -193,6 +201,61 @@ export const CesiumMap: React.FC<CesiumMapProps> = ({
       }
     }
   }, [activeStartPos, targetPos, startName, targetName]);
+
+  // Render Red Hospital Markers on Map
+  useEffect(() => {
+    if (!leafletMap.current || !LRef.current || !hospitalMarkersGroupRef.current) return;
+
+    hospitalMarkersGroupRef.current.clearLayers();
+
+    if (hospitals && hospitals.length > 0) {
+      const L = LRef.current;
+
+      hospitals.forEach((hosp) => {
+        const isTarget = Math.abs(hosp.lat - targetPos[0]) < 0.001 && Math.abs(hosp.lng - targetPos[1]) < 0.001;
+
+        const redHospitalIcon = L.divIcon({
+          className: 'custom-hospital-marker-wrapper',
+          html: `
+            <div class="relative flex items-center justify-center ${isTarget ? 'w-10 h-10 ring-4 ring-red-400 scale-110' : 'w-8 h-8'} bg-red-600 rounded-full border-2 border-white shadow-xl hover:scale-125 transition-transform cursor-pointer">
+              <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0v-5a2 2 0 012-2h2a2 2 0 012 2v5m-4 0h4" />
+              </svg>
+              <span class="absolute -top-1 -right-1 w-3 h-3 bg-red-400 rounded-full border border-white animate-ping"></span>
+            </div>
+          `,
+          iconSize: [36, 36],
+          iconAnchor: [18, 18],
+        });
+
+        const popupContent = document.createElement('div');
+        popupContent.className = 'p-2 min-w-[200px] font-sans';
+        popupContent.innerHTML = `
+          <div class="font-extrabold text-sm text-slate-900 leading-snug">${hosp.name}</div>
+          <div class="text-xs text-slate-500 my-1 line-clamp-2">${hosp.address}</div>
+          <div class="text-xs font-mono text-blue-700 font-bold mb-1">Distance: ${hosp.distanceKm} km (${hosp.etaMins} mins)</div>
+          <div class="text-[11px] text-emerald-700 font-bold mb-2">Beds Free: ${hosp.generalBedsFree} Ward / ${hosp.icuBedsFree} ICU</div>
+          <button class="set-hosp-btn w-full py-1.5 px-3 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg transition-all shadow-sm cursor-pointer">
+            ${isTarget ? '✓ Assigned Hospital' : 'Set as Target Hospital'}
+          </button>
+        `;
+
+        const btn = popupContent.querySelector('.set-hosp-btn');
+        if (btn) {
+          btn.addEventListener('click', () => {
+            if (onSelectHospital) {
+              onSelectHospital(hosp);
+            }
+          });
+        }
+
+        const marker = L.marker([hosp.lat, hosp.lng], { icon: redHospitalIcon })
+          .bindPopup(popupContent);
+
+        hospitalMarkersGroupRef.current.addLayer(marker);
+      });
+    }
+  }, [hospitals, targetPos, onSelectHospital]);
 
   // Update OSRM Polyline
   useEffect(() => {

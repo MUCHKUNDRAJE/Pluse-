@@ -11,6 +11,7 @@ interface TripStatusPanelProps {
   onAdvanceStage: () => void;
   patient: PatientType;
   assignedHospital: HospitalType;
+  nearbyHospitals?: HospitalType[];
   onSelectHospital: (hospital: HospitalType) => void;
 }
 
@@ -19,6 +20,7 @@ export const TripStatusPanel: React.FC<TripStatusPanelProps> = ({
   onAdvanceStage,
   patient,
   assignedHospital,
+  nearbyHospitals = [],
   onSelectHospital,
 }) => {
   const [showHospitalSelector, setShowHospitalSelector] = useState(false);
@@ -181,7 +183,7 @@ export const TripStatusPanel: React.FC<TripStatusPanelProps> = ({
             </button>
           </div>
           <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-            {mockHospitals.map((hosp) => (
+            {(nearbyHospitals && nearbyHospitals.length > 0 ? nearbyHospitals : mockHospitals).map((hosp) => (
               <div
                 key={hosp.id}
                 onClick={() => {

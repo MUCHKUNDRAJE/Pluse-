@@ -10,16 +10,17 @@ import { StatusTimeline } from '@/components/patient/StatusTimeline';
 import { mockPatients, mockAmbulances, mockHospitals, Patient, Ambulance, Hospital } from '@/lib/mockData';
 import { getRealLocationAndHospitals, geocodeCityOrAddress } from '@/lib/locationStore';
 import { fetchOsrmRoute, RouteSegment } from '@/lib/osrm';
-import { User, Truck, Hospital as HospitalIcon, Phone, Locate, Search, MapPin, Building2 } from 'lucide-react';
+import { User, Truck, Hospital as HospitalIcon, Phone, Locate, Search, MapPin } from 'lucide-react';
 
 export default function PatientPage() {
   const [patient, setPatient] = useState<Patient>(mockPatients[0]);
   const [ambulance, setAmbulance] = useState<Ambulance>(mockAmbulances[0]);
   const [hospital, setHospital] = useState<Hospital>(mockHospitals[0]);
+  const [nearbyHospitals, setNearbyHospitals] = useState<Hospital[]>(mockHospitals);
   const [routeData, setRouteData] = useState<RouteSegment | null>(null);
   const [currentStageIndex, setCurrentStageIndex] = useState<number>(2);
   const [isLocating, setIsLocating] = useState(false);
-  const [notice, setNotice] = useState<string | null>("Initializing incremental radius hospital search (1km → 2km)...");
+  const [notice, setNotice] = useState<string | null>("Searching OpenStreetMap real hospitals...");
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
 
@@ -51,7 +52,7 @@ export default function PatientPage() {
 
   const handleFetchUserLocation = () => {
     setIsLocating(true);
-    setNotice("Checking radius 1km → 2km → 3km...");
+    setNotice("Searching real OpenStreetMap hospitals around your location...");
 
     if (typeof window !== 'undefined' && 'geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
@@ -63,6 +64,7 @@ export default function PatientPage() {
 
           setPatient(liveData.patient);
           setHospital(liveData.assignedHospital);
+          setNearbyHospitals(liveData.nearbyHospitals);
           setAmbulance(liveData.ambulance);
 
           const newRoute = await fetchOsrmRoute(
@@ -73,24 +75,25 @@ export default function PatientPage() {
           );
           setRouteData(newRoute);
           setIsLocating(false);
-          setNotice(`Absolute Min Distance Found (${liveData.assignedHospital.distanceKm} km): ${liveData.assignedHospital.name}`);
+          setNotice(`Nearest OpenStreetMap Hospital Found (${liveData.assignedHospital.distanceKm} km): ${liveData.assignedHospital.name}`);
         },
         async () => {
-          loadNagpurPreset();
+          loadDefaultPreset();
         },
         { enableHighAccuracy: true, timeout: 8000 }
       );
     } else {
-      loadNagpurPreset();
+      loadDefaultPreset();
     }
   };
 
-  const loadNagpurPreset = async () => {
+  const loadDefaultPreset = async () => {
     setIsLocating(true);
-    setNotice("Searching Nandanvan Nagpur radius 1km → 2km...");
+    setNotice("Searching OpenStreetMap emergency hospitals...");
     const liveData = await getRealLocationAndHospitals(21.1384, 79.1235);
     setPatient(liveData.patient);
     setHospital(liveData.assignedHospital);
+    setNearbyHospitals(liveData.nearbyHospitals);
     setAmbulance(liveData.ambulance);
 
     const newRoute = await fetchOsrmRoute(
@@ -101,7 +104,7 @@ export default function PatientPage() {
     );
     setRouteData(newRoute);
     setIsLocating(false);
-    setNotice(`Absolute Min Distance Found (${liveData.assignedHospital.distanceKm} km): ${liveData.assignedHospital.name}`);
+    setNotice(`Nearest Real Hospital (${liveData.assignedHospital.distanceKm} km): ${liveData.assignedHospital.name}`);
   };
 
   const handleSearchLocation = async (e: React.FormEvent) => {
@@ -109,13 +112,14 @@ export default function PatientPage() {
     if (!searchQuery.trim()) return;
 
     setIsSearching(true);
-    setNotice(`Searching radius for "${searchQuery}"...`);
+    setNotice(`Searching real hospitals around "${searchQuery}"...`);
 
     const coords = await geocodeCityOrAddress(searchQuery);
     if (coords) {
       const liveData = await getRealLocationAndHospitals(coords[0], coords[1]);
       setPatient(liveData.patient);
       setHospital(liveData.assignedHospital);
+      setNearbyHospitals(liveData.nearbyHospitals);
       setAmbulance(liveData.ambulance);
 
       const newRoute = await fetchOsrmRoute(
@@ -125,7 +129,7 @@ export default function PatientPage() {
         coords[1]
       );
       setRouteData(newRoute);
-      setNotice(`Nearest Hospital (${liveData.assignedHospital.distanceKm} km): ${liveData.assignedHospital.name}`);
+      setNotice(`Nearest Real Hospital (${liveData.assignedHospital.distanceKm} km): ${liveData.assignedHospital.name}`);
     } else {
       setNotice(`Could not locate "${searchQuery}". Try another landmark.`);
     }
@@ -153,23 +157,15 @@ export default function PatientPage() {
           </div>
           <div className="min-w-0">
             <h1 className="text-lg sm:text-2xl font-bold text-slate-900 leading-tight">
-              Patient Emergency Tracking
+              Patient Emergency Dispatch Tracking
             </h1>
             <p className="text-[11px] sm:text-xs text-slate-500 font-mono mt-0.5 line-clamp-2">
-              Patient: <span className="text-slate-900 font-bold">{patient.name}</span> &bull; Reg: <span className="text-blue-700 font-bold">{patient.registrationNumber}</span>
+              Patient: <span className="text-slate-900 font-bold">{patient.name}</span> &bull; Incident Reg: <span className="text-blue-700 font-bold">{patient.registrationNumber}</span>
             </p>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={loadNagpurPreset}
-            className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 rounded-xl text-xs font-bold flex items-center gap-1 shadow-sm transition-all"
-          >
-            <Building2 className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Nandanvan, Nagpur</span>
-          </button>
-
           <form onSubmit={handleSearchLocation} className="flex items-center gap-1 flex-1 min-w-0">
             <input
               type="text"
@@ -285,10 +281,14 @@ export default function PatientPage() {
             </div>
             <CesiumMap
               ambulancePos={[ambulance.currentLat, ambulance.currentLng]}
-              targetPos={[patient.lat, patient.lng]}
-              targetName={`Your GPS: ${patient.locationName}`}
+              targetPos={[hospital.lat, hospital.lng]}
+              targetName={`Destination: ${hospital.name}`}
+              startPos={[patient.lat, patient.lng]}
+              startName={`Your Location: ${patient.locationName}`}
               height="h-48 sm:h-64"
               routeData={routeData}
+              hospitals={nearbyHospitals}
+              onSelectHospital={(hosp) => setHospital(hosp)}
             />
           </div>
         </div>

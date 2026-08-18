@@ -6,12 +6,13 @@ import { TripStatusPanel } from '@/components/ambulance/TripStatusPanel';
 import { fetchOsrmRoute, RouteSegment } from '@/lib/osrm';
 import { mockAmbulances, mockPatients, mockHospitals, Hospital, Patient, Ambulance } from '@/lib/mockData';
 import { getRealLocationAndHospitals, geocodeCityOrAddress } from '@/lib/locationStore';
-import { Truck, Locate, Search, MapPin, Building2, Expand, Shrink } from 'lucide-react';
+import { Truck, Locate, Search, MapPin, Expand, Shrink } from 'lucide-react';
 
 export default function AmbulanceDriverPage() {
   const [ambulance, setAmbulance] = useState<Ambulance>(mockAmbulances[0]);
   const [patient, setPatient] = useState<Patient>(mockPatients[0]);
   const [assignedHospital, setAssignedHospital] = useState<Hospital>(mockHospitals[0]);
+  const [nearbyHospitals, setNearbyHospitals] = useState<Hospital[]>(mockHospitals);
   const [routeData, setRouteData] = useState<RouteSegment | null>(null);
   const [currentStageIndex, setCurrentStageIndex] = useState<number>(1);
   const [isLocating, setIsLocating] = useState(false);
@@ -58,7 +59,7 @@ export default function AmbulanceDriverPage() {
   // Core Geolocation Fetch
   const handleFetchUserLocation = () => {
     setIsLocating(true);
-    setLocationNotice("Searching radius: 1km → 2km → 3km → 5km...");
+    setLocationNotice("Searching OpenStreetMap hospitals around location...");
 
     if (typeof window !== 'undefined' && 'geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
@@ -70,6 +71,7 @@ export default function AmbulanceDriverPage() {
 
           setPatient(liveData.patient);
           setAssignedHospital(liveData.assignedHospital);
+          setNearbyHospitals(liveData.nearbyHospitals);
           setAmbulance(liveData.ambulance);
 
           const newRoute = await fetchOsrmRoute(
@@ -80,25 +82,26 @@ export default function AmbulanceDriverPage() {
           );
           setRouteData(newRoute);
           setIsLocating(false);
-          setLocationNotice(`Radius Search (${liveData.searchRadiusKm}km max): Found nearest hospital at ${liveData.assignedHospital.distanceKm} km (${liveData.assignedHospital.name})`);
+          setLocationNotice(`OpenStreetMap Search: Nearest real hospital ${liveData.assignedHospital.name} (${liveData.assignedHospital.distanceKm} km away)`);
         },
         async () => {
-          loadNagpurPreset();
+          loadDefaultPreset();
         },
         { enableHighAccuracy: true, timeout: 8000 }
       );
     } else {
-      loadNagpurPreset();
+      loadDefaultPreset();
     }
   };
 
-  // Preset for Nandanvan, Nagpur
-  const loadNagpurPreset = async () => {
+  // Fallback preset
+  const loadDefaultPreset = async () => {
     setIsLocating(true);
-    setLocationNotice("Checking radius 1km → 2km in Nandanvan, Nagpur...");
+    setLocationNotice("Checking OpenStreetMap hospital radius...");
     const liveData = await getRealLocationAndHospitals(21.1384, 79.1235);
     setPatient(liveData.patient);
     setAssignedHospital(liveData.assignedHospital);
+    setNearbyHospitals(liveData.nearbyHospitals);
     setAmbulance(liveData.ambulance);
 
     const newRoute = await fetchOsrmRoute(
@@ -125,6 +128,7 @@ export default function AmbulanceDriverPage() {
       const liveData = await getRealLocationAndHospitals(coords[0], coords[1]);
       setPatient(liveData.patient);
       setAssignedHospital(liveData.assignedHospital);
+      setNearbyHospitals(liveData.nearbyHospitals);
       setAmbulance(liveData.ambulance);
 
       const newRoute = await fetchOsrmRoute(
@@ -201,14 +205,6 @@ export default function AmbulanceDriverPage() {
 
         {/* GPS Actions & Fullscreen Buttons */}
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={loadNagpurPreset}
-            className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 rounded-xl text-xs font-bold flex items-center gap-1 shadow-sm transition-all"
-          >
-            <Building2 className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Nandanvan, Nagpur</span>
-          </button>
-
           <form onSubmit={handleSearchLocation} className="flex items-center gap-1">
             <input
               type="text"
@@ -334,6 +330,8 @@ export default function AmbulanceDriverPage() {
             height={isMapFullscreen ? 'h-full' : 'h-full'}
             interactive={true}
             fullscreen={isMapFullscreen}
+            hospitals={nearbyHospitals}
+            onSelectHospital={handleSelectHospital}
             onToggleFullscreen={() => setIsMapFullscreen((prev) => !prev)}
           />
         </div>
@@ -346,6 +344,7 @@ export default function AmbulanceDriverPage() {
               onAdvanceStage={handleAdvanceStage}
               patient={patient}
               assignedHospital={assignedHospital}
+              nearbyHospitals={nearbyHospitals}
               onSelectHospital={handleSelectHospital}
             />
           </div>
