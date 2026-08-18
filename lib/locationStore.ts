@@ -235,16 +235,27 @@ async function fetchHospitalsFromOverpass(lat: number, lng: number): Promise<Hos
 }
 
 /**
- * Fetch real OpenStreetMap hospitals via Nominatim structured amenity search
+ * Fetch real OpenStreetMap hospitals via Nominatim structured amenity search.
+ * Uses a strict viewbox bounding box around the user's GPS so results are ONLY from their city.
  */
 async function fetchHospitalsFromNominatim(lat: number, lng: number): Promise<Hospital[]> {
   try {
+    // Build a tight ±0.45° bounding box (~50 km) around user — prevents Nominatim returning other cities
+    const delta = 0.45;
+    const bbox = `${lng - delta},${lat - delta},${lng + delta},${lat + delta}`; // left,bottom,right,top
+
     // Query both hospitals AND clinics — all red-cross POIs on OSM tiles
     const amenityTypes = ['hospital', 'clinic'];
     const allResults: Hospital[] = [];
 
     for (const amenityType of amenityTypes) {
-      const searchUrl = `https://nominatim.openstreetmap.org/search?format=json&amenity=${amenityType}&lat=${lat}&lon=${lng}&limit=10`;
+      // viewbox + bounded=1 restricts results to the bounding box ONLY
+      const searchUrl =
+        `https://nominatim.openstreetmap.org/search?format=json` +
+        `&amenity=${amenityType}` +
+        `&viewbox=${bbox}` +
+        `&bounded=1` +
+        `&limit=15`;
       const res = await fetch(searchUrl, {
         headers: { 'User-Agent': 'PulseEmergencyApp/1.0 (contact@pulse-emergency.app)' },
         signal: AbortSignal.timeout(5000)
@@ -257,6 +268,10 @@ async function fetchHospitalsFromNominatim(lat: number, lng: number): Promise<Ho
         const hLat = parseFloat(h.lat);
         const hLng = parseFloat(h.lon);
         const distanceKm = calculateHaversineDistance(lat, lng, hLat, hLng);
+
+        // Hard reject: anything more than 50 km is from another city — discard it
+        if (distanceKm > 50) return;
+
         const etaMins = Math.max(1, Math.round((distanceKm / 35) * 60));
         const rawName = h.display_name ? h.display_name.split(',')[0] : null;
         if (!rawName || rawName.trim().length < 2) return;
@@ -323,7 +338,10 @@ export async function getRealLocationAndHospitals(
     rawCandidates = generateDynamicLocalHospitals(userLat, userLng, locationName);
   }
 
-  // Deduplicate by name or coordinates
+  // Hard reject any result more than 50 km away — eliminates hospitals from other cities
+  rawCandidates = rawCandidates.filter((h) => h.distanceKm <= 50);
+
+  // Deduplicate by name + coordinates
   const seen = new Set<string>();
   rawCandidates = rawCandidates.filter((h) => {
     const key = `${h.name.toLowerCase().trim()}_${h.lat.toFixed(3)}_${h.lng.toFixed(3)}`;
@@ -332,11 +350,13 @@ export async function getRealLocationAndHospitals(
     return true;
   });
 
-  // Sort by distanceKm ascending to find absolute nearest real hospital (min km)
+  // Sort by distanceKm ascending — nearest always first
   rawCandidates.sort((a, b) => a.distanceKm - b.distanceKm);
 
-  const expansionSteps = [1.0, 2.0, 3.0, 5.0, 10.0, 20.0, 50.0];
-  let searchRadiusKm = 1.0;
+  // Fine-grained radius expansion: 500m → 1km → 2km ... → 10km
+  // Stops at the smallest radius that contains at least one hospital
+  const expansionSteps = [0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
+  let searchRadiusKm = 0.5;
   let nearbyHospitals: Hospital[] = [];
 
   for (const stepRadius of expansionSteps) {
@@ -348,6 +368,7 @@ export async function getRealLocationAndHospitals(
     }
   }
 
+  // If still empty (very rural area), take everything within 50 km
   if (nearbyHospitals.length === 0) {
     nearbyHospitals = rawCandidates;
   }
